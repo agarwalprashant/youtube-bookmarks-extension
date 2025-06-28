@@ -42,6 +42,20 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.draggable-header {
+  cursor: grab;
+  user-select: none;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.draggable-header:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.draggable-header:active {
+  cursor: grabbing;
+}
+
 .bookmarks-header h3 {
   margin: 0;
   color: white;
@@ -176,18 +190,99 @@
   position: absolute;
   width: 8px;
   height: 8px;
-  background: #00ff00;
+  background: #00ff00 !important;
   border-radius: 50%;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 100;
+  z-index: 10000 !important;
   box-shadow: 0 0 4px rgba(0, 255, 0, 0.6);
   cursor: pointer;
   transition: all 0.2s ease;
+  pointer-events: auto !important;
 }
 
 .bookmark-timeline-dot:hover {
   width: 10px;
   height: 10px;
   box-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+}
+
+/* Specific styling for different progress bar types */
+progress .bookmark-timeline-dot {
+  top: 0;
+  height: 100%;
+  width: 4px;
+  border-radius: 0;
+  transform: none;
+}
+
+progress[max] .bookmark-timeline-dot {
+  top: -2px;
+  height: calc(100% + 4px);
+  width: 4px;
+  border-radius: 2px;
+  transform: none;
+  background: #00ff00 !important;
+  border: 1px solid #ffffff;
+}
+
+/* CampusX specific styles */
+.campusx-bookmark-btn {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  opacity: 0.8;
+}
+
+.campusx-bookmark-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+  opacity: 1;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.campusx-bookmark-btn svg {
+  fill: #333;
+}
+
+/* CampusX panel positioning */
+.campusx-panel {
+  top: 100px;
+}
+
+/* Custom progress overlay for sites without detectable progress bars */
+.custom-bookmark-progress {
+  border-radius: 2px;
+}
+
+.custom-bookmark-progress .bookmark-timeline-dot {
+  pointer-events: all;
+}
+
+/* Make bookmarks panel responsive on CampusX */
+@media (max-width: 768px) {
+  .campusx-panel {
+    width: 280px;
+    right: 10px;
+    top: 80px;
+  }
+  
+  .campusx-bookmark-btn {
+    bottom: 80px;
+    right: 15px;
+    width: 45px;
+    height: 45px;
+  }
 }

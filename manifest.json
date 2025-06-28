@@ -4,7 +4,7 @@
   "version": "1.0",
   "description": "YouTube videos pe bookmarks create karo aur manage karo",
   "permissions": ["storage", "tabs"],
-  "host_permissions": ["https://www.youtube.com/*"],
+  "host_permissions": ["https://www.youtube.com/*", "https://learnwith.campusx.in/*"],
   "background": {
     "service_worker": "background.js"
   },
@@ -12,6 +12,11 @@
     {
       "matches": ["https://www.youtube.com/watch*"],
       "js": ["content.js"],
+      "css": ["styles.css"]
+    },
+    {
+      "matches": ["https://learnwith.campusx.in/*"],
+      "js": ["campusx-content.js"],
       "css": ["styles.css"]
     }
   ],
