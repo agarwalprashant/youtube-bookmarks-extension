@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 350px;
+      padding: 15px;
+      font-family: Arial, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      margin: 0;
+    }
+    
+    h2 {
+      margin: 0 0 15px 0;
+      font-size: 18px;
+      color: #3ea6ff;
+    }
+    
+    .status {
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    
+    .bookmark-stats {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+    
+    .stat-box {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      margin: 0 5px;
+    }
+    
+    .stat-number {
+      font-size: 24px;
+      font-weight: bold;
+      color: #3ea6ff;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-top: 5px;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    button {
+      flex: 1;
+      padding: 10px;
+      background: #3ea6ff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    
+    button:hover {
+      background: #2d86d4;
+    }
+    
+    button.danger {
+      background: #ff4444;
+    }
+    
+    button.danger:hover {
+      background: #dd3333;
+    }
+    
+    .no-video {
+      text-align: center;
+      padding: 20px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .instructions {
+      margin-top: 15px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .instructions h3 {
+      margin: 0 0 8px 0;
+      color: #3ea6ff;
+      font-size: 14px;
+    }
+    
+    .instructions ul {
+      margin: 5px 0;
+      padding-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>YouTube Video Bookmarks</h2>
+  
+  <div id="content">
+    <!-- Content will be injected by JavaScript -->
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

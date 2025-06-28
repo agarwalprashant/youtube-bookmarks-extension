@@ -1,0 +1,119 @@
+{
+  "exportDate": "2025-06-28T03:08:12.852Z",
+  "bookmarks": {
+    "6-1WiITAW10": [
+      {
+        "time": 1184.588256,
+        "desc": "Bookmark at 19:44",
+        "id": 1751013668225
+      },
+      {
+        "time": 1901.170093,
+        "desc": "Bookmark at 31:41  We have a data set, we have a set of columns, you have a subset of F1, F2 and Y. What have you done? You have to take this data and train the logistic regression. And now you have to measure accuracy. Generally, you split the train test. Basically, this is cross validation",
+        "id": 1751015386940
+      },
+      {
+        "time": 2208.846665,
+        "desc": "here we are training the model, which means 15 different models trained.",
+        "id": 1751016151170
+      },
+      {
+        "time": 2623.815689,
+        "desc": "Bookmark at 43:43  My training cross-variation score is 70. R2 score is about 72. And my testing is 65. So there is a difference. What does this signify the difference? It's overfitting. Because there are 13 columns. I had told you that it can be overfitting in the higher dimension. Here you are seeing that it's overfitting. Okay, so we have to be careful.",
+        "id": 1751016785118
+      }
+    ],
+    "X7iIKPoZ0Sw": [],
+    "Yr4pHPZCshA": [
+      {
+        "time": 317.923441,
+        "desc": "Bookmark at 5:17",
+        "id": 1751037326892
+      },
+      {
+        "time": 361.93984,
+        "desc": "Bookmark at 6:01",
+        "id": 1751037348899
+      },
+      {
+        "time": 450.319325,
+        "desc": "Bookmark at 7:30",
+        "id": 1751037401419
+      },
+      {
+        "time": 464.563177,
+        "desc": "Bookmark at 7:44",
+        "id": 1751037408537
+      },
+      {
+        "time": 517.16175,
+        "desc": "Bookmark at 8:37",
+        "id": 1751037428112
+      },
+      {
+        "time": 551.339362,
+        "desc": "Bookmark at 9:11",
+        "id": 1751037446276
+      },
+      {
+        "time": 581.170603,
+        "desc": "Bookmark at 9:41",
+        "id": 1751037458209
+      },
+      {
+        "time": 620.615306,
+        "desc": "Bookmark at 10:20",
+        "id": 1751037478585
+      }
+    ],
+    "apNmMWgFFRg": [],
+    "hRTe7tSkR2k": [
+      {
+        "time": 2643.571778,
+        "desc": "Bookmark at 44:03  If you have a constant column in machine learning, that means there's no variance in column B which explains variance in column C, which directly means that there is nothing that can explain the variation in C column. And so you directly drop that column.",
+        "id": 1751005593628
+      },
+      {
+        "time": 2772.608871,
+        "desc": "Bookmark at 46:12  If you receive constant columns or quasi constant columns in your dataset, the way to remove them is using variance threshold. There are three steps in variance threshold. First step is to decide a threshold value, which is let's say 0.1. In the second step, you calculate variance of all the columns individually. And in the third step, whichever columns have variance less than the threshold value, you simply drop them.",
+        "id": 1751005999375
+      },
+      {
+        "time": 2849.230836,
+        "desc": "Bookmark at 47:29  What should happen in this case? There are a lot of questions, but I will give you a simple guideline. Generally, when you put a variance threshold, make sure that you have to normalize your columns. Take the same scale. Because if the scales are different, the same threshold value will not help. So a good strategy would be to see your data. In this case, the data is normalized. If data is normalized, then it is said that between 0.01 to 0.01 threshold. What did I do? I did not get more brainwashed and put threshold value as 0.5",
+        "id": 1751006157394
+      },
+      {
+        "time": 3024.82649,
+        "desc": "Bookmark at 50:24  did same work on the X-train and the X-test? What happened here is that the data frame was converted to NumPy array. This step was converted to NumPy array.",
+        "id": 1751006402493
+      },
+      {
+        "time": 3114.752889,
+        "desc": "Bookmark at 51:54 points to consider",
+        "id": 1751006531511
+      },
+      {
+        "time": 3478.625804,
+        "desc": "Bookmark at 57:58 s We are talking about Pearson correlation coefficient. Although you can use Spearman and kendall, we will use Pearson correlation coefficient. You will know that you will take two columns with this. This is your input column and this is your output column. If it is minus 1, it means strong inverse linear relationship. If it is plus 1, it means strong positive linear relationship. If relationship is point 9, then it means strong positive linear relationship. correlation is equal to 0, no linear relationship is equal to 0. Non-linear relationship is equal to 0. I hope you know how co-relation coefficient works in statistics.",
+        "id": 1751009140152
+      },
+      {
+        "time": 3975.906662,
+        "desc": "Bookmark at 66:15  If you delete f2, I can also delete F1. The truth is that you can check that the relationship with Y is strong.",
+        "id": 1751009718246
+      },
+      {
+        "time": 4033.793272,
+        "desc": "Bookmark at 67:13  I took a correlation between each column and each column and  Wherever the relation between two columns is greater than 0.95 , I randomly delete it one of the column.",
+        "id": 1751009919501
+      },
+      {
+        "time": 4538.800068,
+        "desc": "Bookmark at 75:38  Our dataset actually fulfills the criteria. We have all the features like F1, F2, F152, and our output. These are all the columns, these are all numerical. And this is categorical with greater than two categories. There are six categories. So this is suitable for ANOVA.",
+        "id": 1751010387370
+      }
+    ],
+    "wP2giPPgwqI": []
+  }
+}
