@@ -159,46 +159,191 @@ const addBookmarkButton = () => {
   const bookmarkBtn = document.createElement("button");
   bookmarkBtn.className = "ytp-button bookmark-btn";
   bookmarkBtn.title = "Add bookmark at current time";
-  bookmarkBtn.innerHTML = `
-    <svg height="100%" viewBox="0 0 24 24" width="100%">
-      <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z" fill="white"/>
-    </svg>
-  `;
+
+  const bookmarkImg = document.createElement("img");
+  bookmarkImg.src = chrome.runtime.getURL('image.png');
+  bookmarkImg.alt = "Bookmark";
+  bookmarkImg.style.width = "20px";
+  bookmarkImg.style.height = "20px";
+  bookmarkBtn.appendChild(bookmarkImg);
   
   bookmarkBtn.onclick = addNewBookmarkEventHandler;
   youtubeLeftControls.appendChild(bookmarkBtn);
 };
 
+// Export bookmarks to JSON file
+const exportBookmarks = async () => {
+  const bookmarks = await fetchBookmarks();
+
+  if (bookmarks.length === 0) {
+    showNotification("No bookmarks to export!");
+    return;
+  }
+
+  const exportData = {
+    exportDate: new Date().toISOString(),
+    bookmarks: {
+      [currentVideo]: bookmarks
+    }
+  };
+
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'save.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showNotification("Bookmarks exported!");
+};
+
+// Import bookmarks from JSON file
+const importBookmarks = () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+
+        if (!data.bookmarks) {
+          showNotification("Invalid bookmark file!");
+          return;
+        }
+
+        // Import all bookmarks from the file
+        for (const [videoId, bookmarks] of Object.entries(data.bookmarks)) {
+          chrome.storage.sync.set({
+            [videoId]: JSON.stringify(bookmarks)
+          });
+        }
+
+        // Refresh display if current video has imported bookmarks
+        if (data.bookmarks[currentVideo]) {
+          displayBookmarks();
+        }
+
+        const videoCount = Object.keys(data.bookmarks).length;
+        showNotification(`Imported bookmarks for ${videoCount} video(s)!`);
+      } catch (err) {
+        showNotification("Error reading file!");
+        console.error(err);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  input.click();
+};
+
 // Bookmarks panel create karo
 const createBookmarksPanel = () => {
+  // Remove any existing panels first
+  document.querySelectorAll(".bookmarks-panel").forEach(p => p.remove());
+
   const panel = document.createElement("div");
   panel.className = "bookmarks-panel";
   panel.innerHTML = `
     <div class="bookmarks-header">
       <h3>Video Bookmarks</h3>
-      <button class="toggle-panel">−</button>
+      <div class="header-buttons">
+        <button class="import-btn" title="Import bookmarks">⬆</button>
+        <button class="export-btn" title="Export bookmarks">⬇</button>
+        <button class="toggle-panel">−</button>
+      </div>
     </div>
     <div class="bookmarks-list"></div>
+    <div class="resize-handle"></div>
   `;
-  
+
   document.body.appendChild(panel);
   bookmarksContainer = panel.querySelector(".bookmarks-list");
-  
+
   // Panel toggle functionality
   const toggleBtn = panel.querySelector(".toggle-panel");
   toggleBtn.onclick = () => {
     panel.classList.toggle("collapsed");
     toggleBtn.textContent = panel.classList.contains("collapsed") ? "+" : "−";
   };
+
+  // Export button functionality
+  const exportBtn = panel.querySelector(".export-btn");
+  exportBtn.onclick = exportBookmarks;
+
+  // Import button functionality
+  const importBtn = panel.querySelector(".import-btn");
+  importBtn.onclick = importBookmarks;
+
+  // Make panel draggable
+  const header = panel.querySelector(".bookmarks-header");
+  let isDragging = false;
+  let dragOffsetX, dragOffsetY;
+
+  header.style.cursor = "grab";
+
+  header.onmousedown = (e) => {
+    if (e.target.tagName === "BUTTON") return;
+    isDragging = true;
+    header.style.cursor = "grabbing";
+    dragOffsetX = e.clientX - panel.offsetLeft;
+    dragOffsetY = e.clientY - panel.offsetTop;
+    e.preventDefault();
+  };
+
+  document.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    panel.style.left = (e.clientX - dragOffsetX) + "px";
+    panel.style.top = (e.clientY - dragOffsetY) + "px";
+    panel.style.right = "auto";
+  });
+
+  document.addEventListener("mouseup", () => {
+    isDragging = false;
+    header.style.cursor = "grab";
+  });
+
+  // Make panel resizable
+  const resizeHandle = panel.querySelector(".resize-handle");
+  let isResizing = false;
+
+  resizeHandle.onmousedown = (e) => {
+    isResizing = true;
+    e.preventDefault();
+  };
+
+  document.addEventListener("mousemove", (e) => {
+    if (!isResizing) return;
+    const newWidth = e.clientX - panel.offsetLeft;
+    const newHeight = e.clientY - panel.offsetTop;
+    if (newWidth > 200) panel.style.width = newWidth + "px";
+    if (newHeight > 100) panel.style.height = newHeight + "px";
+  });
+
+  document.addEventListener("mouseup", () => {
+    isResizing = false;
+  });
 };
 
 // Initialize extension
 const initializeExtension = async () => {
   const urlParams = new URLSearchParams(window.location.search);
   currentVideo = urlParams.get("v");
-  
+
   if (!currentVideo) return;
-  
+
+  // Remove all old panels when switching videos
+  document.querySelectorAll(".bookmarks-panel").forEach(p => p.remove());
+
   // Wait for video player to load
   const checkForPlayer = setInterval(() => {
     videoPlayer = document.querySelector("video");
@@ -254,19 +399,14 @@ const updateTimelineDots = (bookmarks) => {
 // Keyboard shortcut handler for 'b' key
 const handleKeyboardShortcuts = (e) => {
   // Check if 'b' key is pressed and no input field is focused
-  if (e.key.toLowerCase() === 'b' && 
+  if (e.key.toLowerCase() === 'b' &&
       !e.target.matches('input, textarea, [contenteditable="true"]') &&
       videoPlayer && currentVideo) {
     e.preventDefault();
     e.stopPropagation();
-    
-    // Pause the video
-    if (!videoPlayer.paused) {
-      videoPlayer.pause();
-    }
-    
-    // Add bookmark with focus enabled
-    addNewBookmarkEventHandler(true);
+
+    // Add bookmark without pausing
+    addNewBookmarkEventHandler(false);
   }
 };
 
