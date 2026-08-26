@@ -2,6 +2,7 @@
 let videoPlayer;
 let currentVideo = "";
 let bookmarksContainer;
+let timeUpdateHandler = null; // Video timeline sync ke liye handler
 
 // Chrome storage se bookmarks fetch karo
 const fetchBookmarks = () => {
@@ -91,11 +92,18 @@ const displayBookmarks = async () => {
 const createBookmarkElement = (bookmark) => {
   const bookmarkDiv = document.createElement("div");
   bookmarkDiv.className = "bookmark-item";
+  bookmarkDiv.setAttribute("data-time", bookmark.time); // Timeline sync ke liye time store karo
   
   const timeSpan = document.createElement("span");
   timeSpan.className = "bookmark-time";
   timeSpan.textContent = formatTime(bookmark.time);
-  timeSpan.onclick = () => playAtTime(bookmark.time);
+  timeSpan.onclick = () => {
+    // Pehle se selected bookmark se highlight hatao
+    document.querySelectorAll('.bookmark-item.selected').forEach(el => el.classList.remove('selected'));
+    // Current bookmark ko highlight karo
+    bookmarkDiv.classList.add('selected');
+    playAtTime(bookmark.time);
+  };
   
   const descSpan = document.createElement("span");
   descSpan.className = "bookmark-desc";
@@ -269,8 +277,12 @@ const createBookmarksPanel = () => {
   document.body.appendChild(panel);
   bookmarksContainer = panel.querySelector(".bookmarks-list");
 
+  // Panel default collapsed state mein start hoga
+  panel.classList.add("collapsed");
+
   // Panel toggle functionality
   const toggleBtn = panel.querySelector(".toggle-panel");
+  toggleBtn.textContent = "+";
   toggleBtn.onclick = () => {
     panel.classList.toggle("collapsed");
     toggleBtn.textContent = panel.classList.contains("collapsed") ? "+" : "−";
@@ -318,20 +330,61 @@ const createBookmarksPanel = () => {
 
   resizeHandle.onmousedown = (e) => {
     isResizing = true;
+    // Collapsed state hatao taaki !important height block na kare
+    panel.classList.remove("collapsed");
+    toggleBtn.textContent = "−";
     e.preventDefault();
+    e.stopPropagation();
   };
 
   document.addEventListener("mousemove", (e) => {
     if (!isResizing) return;
     const newWidth = e.clientX - panel.offsetLeft;
     const newHeight = e.clientY - panel.offsetTop;
-    if (newWidth > 200) panel.style.width = newWidth + "px";
-    if (newHeight > 100) panel.style.height = newHeight + "px";
+    if (newWidth > 250) panel.style.width = newWidth + "px";
+    if (newHeight > 150) panel.style.height = newHeight + "px";
   });
 
   document.addEventListener("mouseup", () => {
     isResizing = false;
   });
+};
+
+// Video timeline ke saath bookmarks sync karo
+// Jab video ka current time kisi bookmark ke timestamp ke paas hoga, woh bookmark yellow highlight hoga
+const startTimelineSync = () => {
+  if (!videoPlayer) return;
+
+  // Pehle se koi handler laga ho toh hatao
+  if (timeUpdateHandler) {
+    videoPlayer.removeEventListener('timeupdate', timeUpdateHandler);
+  }
+
+  timeUpdateHandler = () => {
+    const currentTime = videoPlayer.currentTime;
+    const bookmarkItems = document.querySelectorAll('.bookmark-item');
+    
+    // Sabse last bookmark dhundho jiska time <= current video time hai
+    let activeItem = null;
+    bookmarkItems.forEach(item => {
+      const bookmarkTime = parseFloat(item.getAttribute('data-time'));
+      if (bookmarkTime <= currentTime) {
+        activeItem = item;
+      }
+    });
+
+    // Pehle sabse highlight hatao (dono classes — click wali aur timeline wali), phir sirf ek pe lagao
+    bookmarkItems.forEach(item => {
+      item.classList.remove('timeline-active');
+      item.classList.remove('selected');
+    });
+    if (activeItem) {
+      activeItem.classList.add('timeline-active');
+      activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  };
+
+  videoPlayer.addEventListener('timeupdate', timeUpdateHandler);
 };
 
 // Initialize extension
@@ -340,6 +393,12 @@ const initializeExtension = async () => {
   currentVideo = urlParams.get("v");
 
   if (!currentVideo) return;
+
+  // Pehle se laga hua timeupdate handler hatao
+  if (videoPlayer && timeUpdateHandler) {
+    videoPlayer.removeEventListener('timeupdate', timeUpdateHandler);
+    timeUpdateHandler = null;
+  }
 
   // Remove all old panels when switching videos
   document.querySelectorAll(".bookmarks-panel").forEach(p => p.remove());
@@ -352,6 +411,7 @@ const initializeExtension = async () => {
       addBookmarkButton();
       createBookmarksPanel();
       displayBookmarks();
+      startTimelineSync(); // Timeline sync shuru karo
     }
   }, 1000);
 };

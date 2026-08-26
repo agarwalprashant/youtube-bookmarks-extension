@@ -2,6 +2,7 @@
 let videoPlayer;
 let currentVideo = "";
 let bookmarksContainer;
+let lastVideoSrc = "";
 
 // Chrome storage se bookmarks fetch karo
 const fetchBookmarks = () => {
@@ -107,7 +108,13 @@ const createBookmarkElement = (bookmark) => {
   const timeSpan = document.createElement("span");
   timeSpan.className = "bookmark-time";
   timeSpan.textContent = formatTime(bookmark.time);
-  timeSpan.onclick = () => playAtTime(bookmark.time);
+  timeSpan.onclick = () => {
+    // Pehle se selected bookmark se highlight hatao
+    document.querySelectorAll('.bookmark-item.selected').forEach(el => el.classList.remove('selected'));
+    // Current bookmark ko highlight karo
+    bookmarkDiv.classList.add('selected');
+    playAtTime(bookmark.time);
+  };
   
   const descSpan = document.createElement("span");
   descSpan.className = "bookmark-desc";
@@ -186,13 +193,18 @@ const createBookmarksPanel = () => {
       <button class="toggle-panel">−</button>
     </div>
     <div class="bookmarks-list"></div>
+    <div class="resize-handle"></div>
   `;
   
   document.body.appendChild(panel);
   bookmarksContainer = panel.querySelector(".bookmarks-list");
   
+  // Panel default collapsed state mein start hoga
+  panel.classList.add("collapsed");
+  
   // Panel toggle functionality
   const toggleBtn = panel.querySelector(".toggle-panel");
+  toggleBtn.textContent = "+";
   toggleBtn.onclick = () => {
     panel.classList.toggle("collapsed");
     toggleBtn.textContent = panel.classList.contains("collapsed") ? "+" : "−";
@@ -200,6 +212,9 @@ const createBookmarksPanel = () => {
   
   // Make panel draggable
   makePanelDraggable(panel);
+  
+  // Make panel resizable
+  makePanelResizable(panel);
 };
 
 // Make bookmarks panel draggable
@@ -301,28 +316,199 @@ const makePanelDraggable = (panel) => {
   });
 };
 
-// Video identifier generate karo CampusX URL se
+// Make bookmarks panel resizable from bottom-right corner
+const makePanelResizable = (panel) => {
+  const handle = panel.querySelector(".resize-handle");
+  if (!handle) return;
+  
+  let isResizing = false;
+  let startX, startY, startWidth, startHeight;
+  
+  const resizeStart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isResizing = true;
+    
+    startWidth = panel.offsetWidth;
+    startHeight = panel.offsetHeight;
+    
+    if (e.type === "mousedown") {
+      startX = e.clientX;
+      startY = e.clientY;
+    } else {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }
+    
+    panel.style.transition = "none";
+    document.body.style.userSelect = "none";
+  };
+  
+  const resizeMove = (e) => {
+    if (!isResizing) return;
+    e.preventDefault();
+    
+    let clientX, clientY;
+    if (e.type === "mousemove") {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    } else {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    }
+    
+    const dx = clientX - startX;
+    const dy = clientY - startY;
+    
+    const newWidth = Math.max(200, startWidth + dx);
+    const newHeight = Math.max(100, startHeight + dy);
+    
+    panel.style.width = newWidth + "px";
+    panel.style.height = newHeight + "px";
+  };
+  
+  const resizeEnd = () => {
+    if (!isResizing) return;
+    isResizing = false;
+    panel.style.transition = "all 0.3s ease";
+    document.body.style.userSelect = "";
+  };
+  
+  // Mouse events
+  handle.addEventListener("mousedown", resizeStart);
+  document.addEventListener("mousemove", resizeMove);
+  document.addEventListener("mouseup", resizeEnd);
+  
+  // Touch events
+  handle.addEventListener("touchstart", resizeStart);
+  document.addEventListener("touchmove", resizeMove);
+  document.addEventListener("touchend", resizeEnd);
+};
+
+// Course ID URL se extract karo
+const getCourseId = () => {
+  const pathParts = window.location.pathname.split('/');
+  // URL format: /s/courses/653f50d1e4b0d2eae855480a/take
+  const coursesIndex = pathParts.indexOf('courses');
+  if (coursesIndex !== -1 && pathParts[coursesIndex + 1]) {
+    return pathParts[coursesIndex + 1];
+  }
+  return pathParts.filter(p => p).join('_');
+};
+
+// Video title DOM se extract karo
+const getVideoTitle = () => {
+  // Video title video player ke neeche dikhta hai
+  const selectors = [
+    'h1', 'h2', 'h3',
+    '[class*="title"]',
+    '[class*="lesson-name"]',
+    '[class*="video-title"]'
+  ];
+  
+  // Video player ke baad pehla heading dhundho
+  const videoEl = document.querySelector('video');
+  if (videoEl) {
+    // Video ke parent container ke baad title dhundho
+    let container = videoEl.closest('[class*="player"]') || videoEl.parentElement;
+    while (container) {
+      const nextSibling = container.nextElementSibling;
+      if (nextSibling) {
+        // Check for headings in next sibling
+        const heading = nextSibling.querySelector('h1, h2, h3') || nextSibling;
+        if (heading && heading.textContent.trim()) {
+          return heading.textContent.trim();
+        }
+      }
+      container = container.parentElement;
+    }
+  }
+  
+  // Fallback: Try common selectors
+  for (const selector of selectors) {
+    const elements = document.querySelectorAll(selector);
+    for (const el of elements) {
+      const text = el.textContent.trim();
+      // Skip very short or very long text, and common UI elements
+      if (text.length > 3 && text.length < 200 && 
+          !text.includes('Bookmark') && !text.includes('Video Bookmarks') &&
+          !text.includes('Course Discussions') && !text.includes('Certificate')) {
+        return text;
+      }
+    }
+  }
+  
+  return null;
+};
+
+// Video identifier generate karo CampusX course ID + video title se
 const generateVideoId = () => {
-  // Use full URL path as identifier for CampusX videos
-  const url = window.location.href;
-  const urlPath = window.location.pathname + window.location.search;
-  return btoa(urlPath).substring(0, 20); // Base64 encode and truncate
+  const courseId = getCourseId();
+  const videoTitle = getVideoTitle();
+  
+  if (videoTitle) {
+    // Spaces ko underscore se replace karo, special chars hatao
+    const cleanTitle = videoTitle.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+    return `cx_${courseId}_${cleanTitle}`;
+  }
+  
+  // Agar title nahi mila toh video source se fallback
+  if (videoPlayer && videoPlayer.currentSrc) {
+    const srcHash = simpleHash(videoPlayer.currentSrc);
+    return `cx_${courseId}_src${srcHash}`;
+  }
+  
+  return `cx_${courseId}_unknown`;
+};
+
+// Simple hash function for fallback video identification
+const simpleHash = (str) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(36);
 };
 
 // Initialize extension for CampusX
 const initializeExtension = async () => {
-  currentVideo = generateVideoId();
-  
-  if (!currentVideo) return;
-  
   // Wait for video player to load
   const checkForPlayer = setInterval(() => {
     videoPlayer = document.querySelector("video");
     if (videoPlayer) {
       clearInterval(checkForPlayer);
-      addFloatingBookmarkButton();
-      createBookmarksPanel();
-      displayBookmarks();
+      
+      // Video title thoda late load hota hai, uska bhi wait karo
+      const checkForTitle = setInterval(() => {
+        const title = getVideoTitle();
+        if (title || videoPlayer.currentSrc) {
+          clearInterval(checkForTitle);
+          
+          lastVideoSrc = videoPlayer.currentSrc || "";
+          currentVideo = generateVideoId();
+          
+          if (!currentVideo) return;
+          
+          // Clean up old panels (prevent duplicates)
+          document.querySelectorAll(".bookmarks-panel.campusx-panel").forEach(p => p.remove());
+          document.querySelectorAll(".custom-bookmark-progress").forEach(o => o.remove());
+          
+          addFloatingBookmarkButton();
+          createBookmarksPanel();
+          displayBookmarks();
+          
+          // Video source change listeners
+          videoPlayer.addEventListener("loadeddata", checkForVideoChange);
+          videoPlayer.addEventListener("loadstart", checkForVideoChange);
+          
+          console.log('CampusX: Initialized with video ID:', currentVideo);
+        }
+      }, 500);
+      
+      // Title ke liye max 10 seconds wait karo
+      setTimeout(() => clearInterval(checkForTitle), 10000);
     }
   }, 1000);
 };
@@ -353,12 +539,36 @@ const handleKeyboardShortcuts = (e) => {
   }
 };
 
-// URL change detect karo (for SPA navigation)
+// Video source change detect karo (URL nahi badalta CampusX pe)
+const checkForVideoChange = () => {
+  const video = document.querySelector("video");
+  if (video && video.currentSrc && video.currentSrc !== lastVideoSrc) {
+    console.log('CampusX: Video source changed from', lastVideoSrc, 'to', video.currentSrc);
+    lastVideoSrc = video.currentSrc;
+    videoPlayer = video;
+    
+    // Thoda wait karo taaki title bhi update ho jaaye
+    setTimeout(() => {
+      const newVideoId = generateVideoId();
+      if (newVideoId !== currentVideo) {
+        currentVideo = newVideoId;
+        console.log('CampusX: Switched to video:', currentVideo);
+        displayBookmarks();
+      }
+    }, 1000);
+  }
+};
+
+// Poll for video source changes every 2 seconds
+setInterval(checkForVideoChange, 2000);
+
+// URL change bhi detect karo (agar course switch ho)
 let lastUrl = location.href;
 new MutationObserver(() => {
   const currentUrl = location.href;
   if (currentUrl !== lastUrl) {
     lastUrl = currentUrl;
+    lastVideoSrc = "";
     initializeExtension();
   }
 }).observe(document, { subtree: true, childList: true });
